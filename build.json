@@ -1,7 +1,7 @@
 {
-    "name": "xdmod-ncsa",
+    "name": "xdmod-ncar",
     "version": "6.5.0",
-    "release": "1.0-rc01",
+    "release": "1.0_rc01",
     "files": {
         "include_paths": [
         ],
@@ -18,10 +18,10 @@
             "etl"
         ],
         "doc": [
-            "AUTHORS",
-            "CHANGELOG",
+            "AUTHORS.md",
+            "CHANGELOG.md",
             "LICENSE",
-            "README"
+            "README.md"
         ]
     }
 }

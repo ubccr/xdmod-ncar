@@ -42,6 +42,33 @@ module.exports = function(config) {
                 error: cov.error
             };
         },
+        "getmax": function(job, metricname) {
+            if (Array.isArray(metricname)) {
+                for (var i = 0; i < metricname.length; i++) {
+                    var res = this.getmax(job, metricname[i]);
+                    if (res.error === 0) {
+                        return res;
+                    }
+                }
+                return {
+                    value: null,
+                    error: 2
+                };
+            }
+            var maxval = this.ref(job, metricname + ".max");
+            if (maxval.error === 0) {
+                return maxval;
+            }
+            var avg = this.ref(job, metricname + ".avg");
+            if (avg.error === 0) {
+                // Avg is present but max absent, therefore max is same as avg
+                return avg;
+            }
+            return {
+                value: null,
+                error: maxval.error
+            };
+        },
 
         "devices": {
             "block_sda": {
@@ -202,8 +229,12 @@ module.exports = function(config) {
             },
             "cores_avail": {
                 formula: function(job) {
-                    if (job.summarization.complete && job.hasOwnProperty("cpu") && job.cpu.hasOwnProperty("nodecpus") && ! job.cpu.nodecpus.hasOwnProperty("error")) {
-                        return this.ref(job, "cpu.nodecpus.all.cnt");
+                    var nodecount = this.ref(job, this.attributes.nodes.ref);
+                    if (nodecount.error == 0 && this.ppn) {
+                        return {
+                            value: this.ppn * nodecount.value,
+                            error: 0
+                        };
                     } else {
                         return {
                             value: 0,
@@ -447,6 +478,11 @@ module.exports = function(config) {
             "memory_used_cov": {
                 formula: function(job) {
                     return this.getcov.call(this, job, "memory.used_minus_cache");
+                }
+            },
+            "max_memory": {
+                formula: function(job) {
+                    return this.getmax(job, 'process_memory.usageratio.max');
                 }
             },
             "mem_used_including_os_caches": {
