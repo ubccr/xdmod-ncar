@@ -42,33 +42,6 @@ module.exports = function(config) {
                 error: cov.error
             };
         },
-        "getmax": function(job, metricname) {
-            if (Array.isArray(metricname)) {
-                for (var i = 0; i < metricname.length; i++) {
-                    var res = this.getmax(job, metricname[i]);
-                    if (res.error === 0) {
-                        return res;
-                    }
-                }
-                return {
-                    value: null,
-                    error: 2
-                };
-            }
-            var maxval = this.ref(job, metricname + ".max");
-            if (maxval.error === 0) {
-                return maxval;
-            }
-            var avg = this.ref(job, metricname + ".avg");
-            if (avg.error === 0) {
-                // Avg is present but max absent, therefore max is same as avg
-                return avg;
-            }
-            return {
-                value: null,
-                error: maxval.error
-            };
-        },
 
         "devices": {
             "block_sda": {
@@ -478,11 +451,6 @@ module.exports = function(config) {
             "memory_used_cov": {
                 formula: function(job) {
                     return this.getcov.call(this, job, "memory.used_minus_cache");
-                }
-            },
-            "max_memory": {
-                formula: function(job) {
-                    return this.getmax(job, 'process_memory.usageratio.max');
                 }
             },
             "mem_used_including_os_caches": {

@@ -288,7 +288,6 @@ module.exports = {
             name: "System Username",
 			dtype: "accounting",
             group: "Administration",
-            visibility: 'non-public',
 			length: 50,
 			nullable: true,
 			def: null,
@@ -353,7 +352,7 @@ module.exports = {
 			dtype: "ignore",
 			nullable: false,
 			def: null,
-			comments: "number of granted processing elements (i.e. wayness)",
+			comments: "number of granted processing elements (ie: wayness)",
 			per: "job",
 			table: "job",
 			dim_insert: function (attributes) { 
@@ -404,7 +403,7 @@ module.exports = {
             group: "Allocated resource",
 			nullable: true,
 			def: [],
-			comments: "array of host names (i.e. [n1r1.x.y.edu, n2r1,x.y.edu, ...])",
+			comments: "array of host names (ie, [n1r1.x.y.edu, n2r1,x.y.edu, ...])",
 			per: "job",
 			dim_insert: function(attributes) {
 				var ret = [];
@@ -754,7 +753,7 @@ module.exports = {
 			]
 		},
 		cpu_idle: {
-			unit: "cpuratio",
+			unit: "ratio",
 			type: "double",
             name: "CPU Idle",
             group: "CPU Statistics",
@@ -793,7 +792,7 @@ module.exports = {
 			]
 		},
 		cpu_system: {
-			unit: "cpuratio",
+			unit: "ratio",
 			type: "double",
             name: "CPU System",
 			nullable: true,
@@ -832,7 +831,7 @@ module.exports = {
 			]
 		},
 		cpu_user: {
-			unit: "cpuratio",
+			unit: "ratio",
 			type: "double",
             name: "CPU User",
 			nullable: true,
@@ -872,7 +871,6 @@ module.exports = {
                 alias: 'cpuuser',
 				roles: { disable: [ "pub" ] },
                 dimension: true,
-                category: 'Metrics',
                 table: 'supremmfact',
                 sql: '(SELECT id FROM modw_supremm.percentages_buckets cb WHERE coalesce(100.0 * cpu_user, -1.0) > cb.min AND coalesce(100.0 * cpu_user, -1.0) <= cb.max)',
                 label: "CPU User Value",
@@ -989,7 +987,6 @@ module.exports = {
                     table: 'supremmfact',
                     sql: '(SELECT id FROM modw_supremm.cpibuckets cb WHERE coalesce(cpiref, -1.0) > cb.min_cpi AND coalesce(cpiref, -1.0) <= cb.max_cpi)',
                     label: "CPI Value",
-                    category: "Metrics",
                     dimension_table: "cpibuckets"
                 },
                 {
@@ -1033,7 +1030,6 @@ module.exports = {
                     table: 'supremmfact',
                     sql: '(SELECT id FROM modw_supremm.catastrophe_buckets cb WHERE coalesce(catastrophe, -1.0) > cb.min AND coalesce(catastrophe, -1.0) <= cb.max)',
                     label: "Catastrophe Rank",
-                    category: "Metrics",
                     dimension_table: "catastrophe_buckets"
             } ]
         },
@@ -1042,10 +1038,10 @@ module.exports = {
             unit: "ratio",
             type: "double",
             name: "CPLD (ref)",
-            group: "CPU Statistics",
+            dtype: "analysis",
             nullable: true,
             def: null,
-            comments: "The ratio of clock ticks to L1D cache load on average per core. The CPLD is calculated using the reference processor clock.",
+            comments: "clock ticks per l1d load on average per core",
             per: "core",
             raw_per: "core",
             algorithm: "$ frac{ N_{ticks} } { N_{l1d loads} }$",
@@ -1147,11 +1143,10 @@ module.exports = {
         cpu_user_cv: {
             unit: "ratio",
             type: "double",
-            name: "CPU User cov",
-            group: "CPU Statistics",
+            dtype: "analysis",
             nullable: true,
             def: null,
-            comments: "Coefficient of variation for the CPU user for all cores that were assigned to the job.",
+            comments: "Coefficient of variation for the CPU user for all cores job ran on",
             per: "core",
             raw_per: "core",
             algorithm: "$ frac{ \\sigma }{ \\mu } $",
@@ -1184,7 +1179,6 @@ module.exports = {
                     table: 'supremmfact',
                     sql: '(SELECT id FROM modw_supremm.cpu_user_cv_buckets cb WHERE coalesce(cpu_user_cv, -1.0) > cb.min AND coalesce(cpu_user_cv, -1.0) <= cb.max)',
                     label: "CPU User CV",
-                    category: "Metrics",
                     dimension_table: "cpu_user_cv_buckets"
                 },
             ]
@@ -1271,34 +1265,6 @@ module.exports = {
             comments: "Coefficient of variation of the average memory used",
             per: "job",
             table: "job",
-        },
-
-        max_memory: {
-            unit: "ratio",
-            type: "double",
-            nullable: true,
-            group: "Memory Statistics",
-            name: "Peak Memory Usage Ratio",
-            def: null,
-            comments: "Maximum ratio of memory used to total memory available for the compute node with the highest peak memory usage",
-            per: "node",
-            raw_per: "node",
-            typical_usage: "Measure of peak memory usage for the job.",
-            table: "job",
-            agg: [{
-                name: 'max_mem_bucketid',
-                type: 'int32',
-                alias: 'max_mem',
-                roles: {
-                    disable: ["pub"]
-                },
-                dimension: true,
-                category: 'Metrics',
-                table: 'supremmfact',
-                sql: '(SELECT id FROM modw_supremm.percentages_buckets cb WHERE coalesce(100.0 * max_memory, -1.0) > cb.min AND coalesce(100.0 * max_memory, -1.0) <= cb.max)',
-                label: "Peak Memory Usage (%)",
-                dimension_table: "percentages_buckets"
-            }]
         },
 
 		mem_used_including_os_caches: {
@@ -1389,7 +1355,6 @@ module.exports = {
                     table: 'supremmfact',
                     sql: '(SELECT id FROM modw_supremm.logscalebytes_buckets cb WHERE coalesce(ib_rx_bytes/wall_time, -1.0) > cb.min AND coalesce(ib_rx_bytes/wall_time, -1.0) <= cb.max)',
                     label: "InfiniBand Receive rate",
-                    category: "Metrics",
                     dimension_table: "logscalebytes_buckets"
                 }
 			]
@@ -1684,7 +1649,6 @@ module.exports = {
                     table: 'supremmfact',
                     sql: '(SELECT id FROM modw_supremm.log2scale_buckets cb WHERE coalesce(:field_name*nodes, -1.0) > cb.min AND coalesce(:field_name*nodes, -1.0) <= cb.max)',
                     label: ":label_1 bytes received",
-                    category: "Metrics",
                     dimension_table: "log2scale_buckets"
                 }
 			]
@@ -1709,7 +1673,7 @@ module.exports = {
             group: "Network I/O Statistics",
 			nullable: true,
 			def: null,
-			comments: "number of messages received by network drive i averaged across nodes, i.e. lnet.-.rx_msgs",
+			comments: "number of messages received by network drive i averaged across nodes, ie: lnet.-.rx_msgs",
 			per: "node",
 			raw_per: "node",
 			algorithm: "",
@@ -1724,7 +1688,7 @@ module.exports = {
             name: "Parallel filesystem :label_1 bytes transmitted",
             group: "Network I/O Statistics",
 			def: null,
-			comments: "number of bytes transmitted by network drive i averaged across nodes, i.e. lnet.-.tx_bytes",
+			comments: "number of bytes transmitted by network drive i averaged across nodes, ie: lnet.-.tx_bytes",
 			per: "node",
 			raw_per: "node",
 			algorithm: "",
@@ -1773,7 +1737,7 @@ module.exports = {
             name: "Parallel filesystem :label_1 messages transmitted",
             group: "Network I/O Statistics",
 			def: null,
-			comments: "number of messages transmitted by network drive i averaged across nodes, i.e. lnet.-.tx_msgs",
+			comments: "number of messages transmitted by network drive i averaged across nodes, ie: lnet.-.tx_msgs",
 			per: "node",
 			raw_per: "node",
 			algorithm: "",
@@ -1789,7 +1753,7 @@ module.exports = {
 			nullable: true,
 			def: null,
             group: "Network I/O Statistics",
-			comments: "number of bytes received by network via network interface i averaged across nodes, i.e. net.ib0.rx_bytes",
+			comments: "number of bytes received by network via network interface i averaged across nodes, ie: net.ib0.rx_bytes",
 			per: "node",
 			raw_per: "node",
 			algorithm: "",
@@ -2051,7 +2015,6 @@ module.exports = {
 			def: -1,
             name: "Username",
             group: "Administration",
-            visibility: 'non-public',
 			comments: "The XSEDE username of the user that ran the job.",
 			per: "job",
 			table: "job",
@@ -2164,7 +2127,6 @@ module.exports = {
 				table: 'supremmfact',
 				roles: { disable: [ "pub" ] },
 				dimension: true,
-				category: "Metrics",
 				dimension_table: "datasource"
 			}
 		},

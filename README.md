@@ -36,16 +36,19 @@ The `ganglia-pcp` mapping routines need to know the number of processors per com
 
 ## Switching schema files
 
-Edit the main SUPReMM configuration file `/etc/xdmod/portal_settings.d/supremm.ini` and
-change the `supremm-general.schema_file` parameter to `etl.schema.ncar.js`
+Make a backup of the default schema file
+`/usr/share/xdmod/etl/js/config/supremm/etl.schema.js` and then copy over the
+contents of the NCAR-specific version
+`/usr/share/xdmod/etl/js/config/supremm/etl.schema.ncar.js`
 
-    ...
-    [supremm-general]
-    ...
-    schema_file = "etl.schema.ncar.js"
-    ...
 
-After making this change it is necessary to run a script that updates the installed system files:
+    # Switch the schema file
+    cd /usr/share/xdmod/etl/js/config/supremm
+    mv etl.schema.js etl.schema.js.orig
+    cp etl.schema.ncar.js etl.schema.js
+
+
+After making this change it is necessary to run the script that updates the installed system files:
 
     cd /usr/share/xdmod/etl/js
     node etl.cli.js -a
