@@ -42,6 +42,16 @@ module.exports = function(config) {
                 error: cov.error
             };
         },
+        "getref": function(job, metricname) {
+            var datum = this.ref(job, metricname);
+            if (datum.error === 0) {
+                return datum;
+            }
+            return {
+                value: null,
+                error: datum.error
+            };
+        },
 
         "devices": {
             "block_sda": {
@@ -55,7 +65,7 @@ module.exports = function(config) {
                 "name": "panfs"
             },
             "net_eth0": {
-                "name": "em1"
+                "name": "total"
             },
             "net_ib0": {
                 "name": "ib0"
@@ -442,6 +452,13 @@ module.exports = function(config) {
                             error: 0
                         };
                     }
+                    var nodememory = this.ref(job, "nodememory.used_minus_cache.avg");
+                    if (nodememory.error === 0 && this.ppn) {
+                        return {
+                            value: nodememory.value * 1024.0 / this.ppn,
+                            error: 0
+                        };
+                    }
                     return {
                         value: null,
                         error: mem.error
@@ -450,7 +467,7 @@ module.exports = function(config) {
             },
             "memory_used_cov": {
                 formula: function(job) {
-                    return this.getcov.call(this, job, "memory.used_minus_cache");
+                    return this.getcov.call(this, job, ["memory.used_minus_cache", "nodememory.used_minus_cache"]);
                 }
             },
             "mem_used_including_os_caches": {
@@ -462,12 +479,12 @@ module.exports = function(config) {
                             error: 0
                         };
                     }
-                    var nodememory =  this.ref(job, "nodememory.used.avg");
+                    var nodememory = this.ref(job, "nodememory.used.avg");
                     if (nodememory.error === 0 && this.ppn) {
                         return {
                             value: nodememory.value * 1024.0 / this.ppn,
                             error: 0
-                        }
+                        };
                     }
                     return {
                         value: null,
@@ -564,26 +581,34 @@ module.exports = function(config) {
                 error: 2
             },
             "net_eth0_rx": {
-                ref: "network.em1.in-bytes.avg"
+                formula: function(job) {
+                    return this.getref.call(this, job, "network." + this.devices.net_eth0.name + ".in-bytes.avg");
+                }
             },
             "net_eth0_rx_cov": {
                 formula: function(job) {
-                    return this.getcov.call(this, job, "network.em1.in-bytes");
+                    return this.getcov.call(this, job, "network." + this.devices.net_eth0.name + ".in-bytes");
                 }
             },
             "net_eth0_rx_packets": {
-                ref: "network.em1.in-packets.avg"
+                formula: function(job) {
+                    return this.getref.call(this, job, "network." + this.devices.net_eth0.name + ".in-packets.avg");
+                }
             },
             "net_eth0_tx": {
-                ref: "network.em1.out-bytes.avg"
+                formula: function(job) {
+                    return this.getref.call(this, job, "network." + this.devices.net_eth0.name + ".out-bytes.avg");
+                }
             },
             "net_eth0_tx_cov": {
                 formula: function(job) {
-                    return this.getcov.call(this, job, "network.em1.out-bytes");
+                    return this.getcov.call(this, job, "network." + this.devices.net_eth0.name + ".out-bytes");
                 }
             },
             "net_eth0_tx_packets": {
-                ref: "network.em1.out-packets.avg"
+                formula: function(job) {
+                    return this.getref.call(this, job, "network." + this.devices.net_eth0.name + ".out-packets.avg");
+                }
             },
             "net_ib0_rx": {
                 ref: "network.ib0.in-bytes.avg"
