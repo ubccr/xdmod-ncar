@@ -14,3 +14,5 @@ This contains the custom files that are compatible with the xdmod 5.6 release.
 ## xdmod6.5 branch
 This contains the custom files that are compatible with the xdmod 6.5 release.
 
+## xdmod6.6 branch
+This contains the custom files that are compatible with the xdmod 6.6 release.
