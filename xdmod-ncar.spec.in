@@ -11,7 +11,7 @@ Source:        %{name}-%{version}.tar.gz
 BuildRoot:     %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:     noarch
 BuildRequires: php-cli
-Requires:      xdmod-supremm >= 6.6.0, xdmod-supremm < 6.7.0
+Requires:      xdmod-supremm >= 7.0.0, xdmod-supremm < 7.1.0
 
 %description
 Open XDMoD NCAR package.
@@ -37,3 +37,4 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{_datadir}/xdmod/
 %{_docdir}/%{name}-%{version}/
+%{_sysconfdir}/xdmod/modules.d/ncar.json

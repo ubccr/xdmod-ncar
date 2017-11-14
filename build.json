@@ -1,6 +1,6 @@
 {
     "name": "xdmod-ncar",
-    "version": "6.6.0",
+    "version": "7.0.0",
     "release": "1.0",
     "files": {
         "include_paths": [
@@ -22,6 +22,9 @@
             "CHANGELOG.md",
             "LICENSE",
             "README.md"
-        ]
+        ],
+        "etc": {
+            "configuration/modules.d/ncar.json": "modules.d/ncar.json"
+	}
     }
 }
