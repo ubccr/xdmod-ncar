@@ -1,6 +1,14 @@
 Open XDMoD NCAR module Change Log
 =============================
 
+2019-06-18 v8.1.0
+-----------------
+
+- update application/executable ident algorithm
+- fix lint in exit_status mapping
+- improve error handling in catastrophe mapping
+- add mapping for node_cpu_idle, energy, max_power, gpu_energy, gpu_max_power
+
 2017-02-17 v6.5.0
 -----------------
 

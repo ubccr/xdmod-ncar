@@ -1,6 +1,36 @@
-module.exports = function(config) {
+var app_ident = require('../app_ident.js');
 
-    var appident = require('../app_ident.js')(config.applicationDefn);
+module.exports = function(config) {
+    var appident = app_ident(config.applicationDefn);
+
+    var getProcInfo = function (job) {
+        var app = null;
+
+        if (job.procDump && job.procDump.constrained) {
+            app = appident(job.procDump.constrained);
+
+            if (!app) {
+                app = appident(job.procDump.unconstrained);
+            }
+
+            if (!app) {
+                if (job.procDump.constrained.length > 0) {
+                    return {
+                        executable: job.procDump.constrained[0],
+                        name: 'uncategorized'
+                    };
+                }
+                if (job.procDump.unconstrained.length > 0) {
+                    return {
+                        executable: job.procDump.unconstrained[0],
+                        name: 'uncategorized'
+                    };
+                }
+            }
+        }
+
+        return app;
+    };
 
     return {
         id: config.resource_id,
@@ -130,88 +160,40 @@ module.exports = function(config) {
             "cwd": {
                 error: 2
             },
-            "executable": {
-                formula: function(job) {
-                    if (job.procDump === undefined) {
+            executable: {
+                formula: function (job) {
+                    var app = getProcInfo(job);
+                    if (app) {
                         return {
-                            value: null,
-                            error: this.metricErrors.codes.metricMissingUnknownReason.value
-                        };
-                    }
-                    var getcommand = function(cmdline) {
-                        var cmdend = cmdline.indexOf(" ");
-                        if (cmdend === -1) {
-                            cmdend = cmdline.length;
-                        }
-                        var cmdbegin = cmdline.lastIndexOf("/", cmdend) + 1;
-
-                        return cmdline.substring(cmdbegin, cmdend);
-                    };
-                    var commandparsers = {
-                        "java": function(cmdline) {
-                            // Crude command parser, does not take into account escape characters
-                            var tokens = cmdline.split(" ");
-                            for (var i = 0; i < tokens.length - 1; i++) {
-                                if (tokens[i] === "-jar") {
-                                    return tokens[i + 1];
-                                }
-                            }
-                            return tokens[0];
-                        }
-                    };
-                    var getproc = function(procarray) {
-                        var blacklist = ["sh", "csh", "bash", "srun", "mpiexec", "mpirun.mpich", "ssh", "slurmstepd:", "mpiexec.hydra", "mpirun", "pmi_proxy", "cp"];
-                        var len = procarray.length;
-                        var i;
-                        for (i = 0; i < len; i += 1) {
-                            var cmd = getcommand(procarray[i]);
-                            if (blacklist.indexOf(cmd) === -1) {
-                                if (commandparsers[cmd]) {
-                                    return commandparsers[cmd](procarray[i]);
-                                }
-                                return procarray[i].split(" ")[0];
-                            }
-                        }
-                        return null;
-                    };
-
-                    var p = getproc(job.procDump.constrained);
-                    if (p === null) {
-                        p = getproc(job.procDump.unconstrained);
-                    }
-                    if (p === null) {
-                        return {
-                            value: null,
-                            error: this.metricErrors.codes.metricMissingUnknownReason.value
+                            value: app.executable,
+                            error: 0
                         };
                     }
                     return {
-                        value: p,
-                        error: 0
+                        value: null,
+                        error: this.metricErrors.codes.metricMissingUnknownReason.value
                     };
                 }
             },
-            "application": {
-                formula: function(job) {
-                    var exec = this.attributes.executable.formula.call(this, job);
-                    if (exec.error) {
-                        return exec;
+            application: {
+                formula: function (job) {
+                    var app = getProcInfo(job);
+                    if (app) {
+                        return {
+                            value: app.name,
+                            error: 0
+                        };
                     }
-
-                    var app_id = appident(exec.value);
-
-                    if (app_id) {
-                        return {value: app_id.name, error: 0};
-                    }
-                    else {
-                        return {value: "uncategorized", error: 0};
-                    }
+                    return {
+                        value: null,
+                        error: this.metricErrors.codes.metricMissingUnknownReason.value
+                    };
                 }
             },
             "exit_status": {
                 formula: function(job) {
                     var exit = this.ref(job, "acct.exit_status");
-                    if (exit.error == 0 && exit.value) {
+                    if (exit.error === 0 && exit.value) {
                         exit.value = exit.value.split(" ")[0];
                     }
                     return exit;
@@ -439,8 +421,39 @@ module.exports = function(config) {
                     return this.getcov.call(this, job, "cpuperf.cpiref");
                 }
             },
-            "catastrophe": {
-                ref: "catastrophe.value"
+            catastrophe: {
+                formula: function (job) {
+                    var result = {
+                        value: null,
+                        error: this.metricErrors.codes.metricMissingNotAvailOnThisHost.value
+                    };
+
+                    if (job.catastrophe) {
+                        if (job.catastrophe.error) {
+                            switch (job.catastrophe.error) {
+                                case 1:
+                                    result.error = this.metricErrors.codes.metricDisabledByUser.value;
+                                    break;
+                                case 2:
+                                    result.error = this.metricErrors.codes.metricInsufficientData.value;
+                                    break;
+                                case 6:
+                                    result.error = this.metricErrors.codes.metricCounterRollover.value;
+                                    break;
+                                default:
+                                    result.error = this.metricErrors.codes.metricMissingUnknownReason.value;
+                                    break;
+                            }
+                        } else if (Number.isNaN(job.catastrophe.value)) {
+                            result.error = this.metricErrors.codes.metricSummarizationError.value;
+                        } else {
+                            result.value = job.catastrophe.value;
+                            result.error = 0;
+                        }
+                    }
+
+                    return result;
+                }
             },
             "cpldref": {
                 ref: "cpuperf.cpldref.avg"
@@ -487,6 +500,17 @@ module.exports = function(config) {
             "cpu_user_cv": {
                 formula: function(job) {
                     return this.getcov.call(this, job, ["cpu.jobcpus.user", "cpu.nodecpus.user"]);
+                }
+            },
+            node_cpu_idle: {
+                ref: 'cpu.nodecpus.idle.avg'
+            },
+            energy: {
+                ref: 'ipmi.energy.avg'
+            },
+            max_power: {
+                formula: function (job) {
+                    return this.getmax(job, 'ipmi.power.max');
                 }
             },
             "memory_used": {
@@ -672,6 +696,61 @@ module.exports = function(config) {
             },
             "net_ib0_tx_packets": {
                 ref: "network.ib0.out-packets.avg"
+            },
+            gpu_energy: {
+                formula: function (job) {
+                    if (!job.gpupower) {
+                        return { value: null, error: this.metricErrors.codes.metricMissingNotAvailOnThisHost.value };
+                    }
+
+                    var energy = 0.0;
+                    var device_count = 0;
+
+                    for (let gpu in job.gpupower) {
+                        if (job.gpupower.hasOwnProperty(gpu)) {
+                            if (job.gpupower[gpu].energy && job.gpupower[gpu].energy.avg) {
+                                energy += job.gpupower[gpu].energy.avg;
+                                device_count += 1;
+                            }
+                        }
+                    }
+
+                    if (device_count === 0) {
+                        return { value: null, error: this.metricErrors.codes.missingCollectionFailed.value };
+                    }
+
+                    return { value: energy, error: 0 };
+                }
+            },
+            gpu_max_power: {
+                formula: function (job) {
+                    if (!job.gpupower) {
+                        return { value: null, error: this.metricErrors.codes.metricMissingNotAvailOnThisHost.value };
+                    }
+
+                    var max_power = 0.0;
+                    var device_count = 0;
+
+                    for (let gpu in job.gpupower) {
+                        if (job.gpupower.hasOwnProperty(gpu)) {
+                            if (job.gpupower[gpu].power && job.gpupower[gpu].power.max) {
+                                if (job.gpupower[gpu].power.max.max) {
+                                    max_power = Math.max(max_power, job.gpupower[gpu].power.max.max);
+                                    device_count += 1;
+                                } else if (job.gpupower[gpu].power.max.avg) {
+                                    max_power = Math.max(max_power, job.gpupower[gpu].power.max.avg);
+                                    device_count += 1;
+                                }
+                            }
+                        }
+                    }
+
+                    if (device_count === 0) {
+                        return { value: null, error: this.metricErrors.codes.missingCollectionFailed.value };
+                    }
+
+                    return { value: max_power, error: 0 };
+                }
             },
             "gpu0_nv_mem_used": {
                 ref: "gpu.gpu0.memused.avg"
